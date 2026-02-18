@@ -140,44 +140,42 @@ def apply_transform(
     Returns:
         Union[List[ReturnType], ReturnType]: The return type of `transform` or a list thereof.
     """
-    try:
-        map_items_ = int(map_items) if isinstance(map_items, bool) else map_items
-        if isinstance(data, (list, tuple)) and map_items_ > 0:
-            return [
-                apply_transform(transform, item, map_items_ - 1, unpack_items, log_stats, lazy, overrides)
-                for item in data
-            ]
-        return _apply_transform(transform, data, unpack_items, lazy, overrides, log_stats)
-    except Exception as e:
-        # if in debug mode, don't swallow exception so that the breakpoint
-        # appears where the exception was raised.
-        if MONAIEnvVars.debug():
-            raise
-        if log_stats is not False and not isinstance(transform, transforms.compose.Compose):
-            # log the input data information of exact transform in the transform chain
-            if isinstance(log_stats, str):
-                datastats = transforms.utility.array.DataStats(data_shape=False, value_range=False, name=log_stats)
-            else:
-                datastats = transforms.utility.array.DataStats(data_shape=False, value_range=False)
-            logger = logging.getLogger(datastats._logger_name)
-            logger.error(f"\n=== Transform input info -- {type(transform).__name__} ===")
-            if isinstance(data, (list, tuple)):
-                data = data[0]
-
-            def _log_stats(data, prefix: str | None = "Data"):
-                if isinstance(data, (np.ndarray, torch.Tensor)):
-                    # log data type, shape, range for array
-                    datastats(img=data, data_shape=True, value_range=True, prefix=prefix)
-                else:
-                    # log data type and value for other metadata
-                    datastats(img=data, data_value=True, prefix=prefix)
-
-            if isinstance(data, dict):
-                for k, v in data.items():
-                    _log_stats(data=v, prefix=k)
-            else:
-                _log_stats(data=data)
-        raise RuntimeError(f"applying transform {transform}") from e
+    # try:
+    map_items_ = int(map_items) if isinstance(map_items, bool) else map_items
+    if isinstance(data, (list, tuple)) and map_items_ > 0:
+        return [
+            apply_transform(transform, item, map_items_ - 1, unpack_items, log_stats, lazy, overrides)
+            for item in data
+        ]
+    return _apply_transform(transform, data, unpack_items, lazy, overrides, log_stats)
+    # except Exception as e:
+    #     # if in debug mode, don't swallow exception so that the breakpoint
+    #     # appears where the exception was raised.
+    #     if MONAIEnvVars.debug():
+    #         raise
+    #     if log_stats is not False and not isinstance(transform, transforms.compose.Compose):
+    #         # log the input data information of exact transform in the transform chain
+    #         if isinstance(log_stats, str):
+    #             datastats = transforms.utility.array.DataStats(data_shape=False, value_range=False, name=log_stats)
+    #         else:
+    #             datastats = transforms.utility.array.DataStats(data_shape=False, value_range=False)
+    #         logger = logging.getLogger(datastats._logger_name)
+    #         logger.error(f"\n=== Transform input info -- {type(transform).__name__} ===")
+    #         if isinstance(data, (list, tuple)):
+    #             data = data[0]
+    #         def _log_stats(data, prefix: str | None = "Data"):
+    #             if isinstance(data, (np.ndarray, torch.Tensor)):
+    #                 # log data type, shape, range for array
+    #                 datastats(img=data, data_shape=True, value_range=True, prefix=prefix)
+    #             else:
+    #                 # log data type and value for other metadata
+    #                 datastats(img=data, data_value=True, prefix=prefix)
+    #         if isinstance(data, dict):
+    #             for k, v in data.items():
+    #                 _log_stats(data=v, prefix=k)
+    #         else:
+    #             _log_stats(data=data)
+    #     raise RuntimeError(f"applying transform {transform}") from e
 
 
 class Randomizable(ThreadUnsafe, RandomizableTrait):
